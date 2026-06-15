@@ -1,129 +1,94 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Trajectory + Prediction</title>
+<head>
+  <meta charset="utf-8" />
+  <title>Ballistic Shot Project</title>
 
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@4.0.2/dist/aframe-physics-system.min.js"></script>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+</head>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  </head>
+<body>
 
-  <body>
-    <a-scene physics="driver: ammo; debug: false">
+<a-scene>
 
-      <!-- ПІДЛОГА -->
-      <a-box position="0 -1 0" width="20" height="1" depth="20" color="#4CAF50" static-body></a-box>
+  <!-- Земля -->
+  <a-box position="0 -1 0" width="30" height="1" depth="30" color="#4CAF50"></a-box>
 
-      <!-- ОБ’ЄКТ -->
-      <a-sphere id="ball" position="0 5 -3" radius="0.5" color="red" dynamic-body></a-sphere>
+  <!-- М’ЯЧ -->
+  <a-sphere id="ball" radius="0.25" color="red" position="0 0 0"></a-sphere>
 
-      <!-- КАМЕРА -->
-      <a-entity position="0 1.6 5">
-        <a-camera></a-camera>
-      </a-entity>
+  <!-- МАРКЕР ПАДІННЯ -->
+  <a-cylinder id="target" radius="0.3" height="0.1" color="yellow" position="0 0 0"></a-cylinder>
 
-    </a-scene>
+  <!-- КАМЕРА -->
+  <a-camera position="0 2 6"></a-camera>
 
-    <script>
+</a-scene>
 
-      const ball = document.querySelector("#ball");
+<script>
+(() => {
 
-// фізика
-const g = 9.81;
-const v0 = 12;        // сила кидка
-const angle = 45;     // кут (в градусах)
+  // =========================
+  // ФІЗИКА
+  // =========================
+  const g = 9.81;
 
-// стартова позиція
-const x0 = 0;
-const y0 = 0;
+  const v0 = 12;       // сила пострілу
+  const angle = 45;    // кут (вгору)
 
-let t = 0;
-const dt = 0.02;
+  const theta = angle * Math.PI / 180;
 
-const theta = angle * Math.PI / 180;
+  const vx = v0 * Math.cos(theta);
+  const vy0 = v0 * Math.sin(theta);
 
-// швидкість
-const vx = v0 * Math.cos(theta);
-const vy0 = v0 * Math.sin(theta);
+  // =========================
+  // ОБ’ЄКТИ
+  // =========================
+  const ball = document.querySelector("#ball");
+  const target = document.querySelector("#target");
 
-function update() {
+  // старт
+  let t = 0;
+  const dt = 0.02;
 
-  const x = x0 + vx * t;
-  const y = y0 + vy0 * t - 0.5 * g * t * t;
+  const x0 = 0;
+  const y0 = 0;
 
-  ball.setAttribute("position", `${x} ${Math.max(y, 0)} 0`);
+  // =========================
+  // ПРОГНОЗ ДАЛЬНОСТІ
+  // =========================
+  const range = (v0 * v0 * Math.sin(2 * theta)) / g;
 
-  t += dt;
+  target.setAttribute("position", `${range} 0 0`);
 
-  if (y > 0) {
-    requestAnimationFrame(update);
-  } else {
-    console.log("Впав! дальність:", x.toFixed(2));
+  console.log("🎯 Очікувана дальність:", range.toFixed(2));
+
+  // =========================
+  // РУХ
+  // =========================
+  function animate() {
+
+    const x = x0 + vx * t;
+    const y = y0 + vy0 * t - 0.5 * g * t * t;
+
+    // оновлення позиції м’яча
+    ball.setAttribute("position", `${x} ${Math.max(y, 0)} 0`);
+
+    t += dt;
+
+    // падіння
+    if (y > 0) {
+      requestAnimationFrame(animate);
+    } else {
+      console.log("ВПАВ!");
+      console.log("Реальна дальність:", x.toFixed(2));
+    }
   }
-}
-    
-    <!-- ГРАФІК -->
-    <canvas id="chart" style="position:fixed; top:10px; right:10px; width:300px; height:200px;"></canvas>
 
-    <script>
-      const ball = document.querySelector("#ball");
+  animate();
 
-      let positions = [];
-      let chart;
-      let startY = 5;
+})();
+</script>
 
-      // ініціалізація графіка
-      const ctx = document.getElementById("chart");
-
-      chart = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: [],
-          datasets: [{
-            label: "Trajectory (X-Z)",
-            data: [],
-            borderColor: "red",
-            fill: false
-          }]
-        },
-        options: {
-          responsive: false
-        }
-      });
-
-      // оновлення траєкторії
-      function updateTrajectory() {
-        const pos = ball.object3D.position;
-
-        positions.push({ x: pos.x, z: pos.z });
-
-        // додаємо точку (беремо X як вісь)
-        chart.data.labels.push(positions.length);
-        chart.data.datasets[0].data.push(pos.x);
-
-        chart.update();
-
-        // прогноз падіння
-        if (positions.length > 10) {
-          const last = positions[positions.length - 1];
-
-          // простий прогноз: продовження руху
-          const prev = positions[positions.length - 2];
-          const dx = last.x - prev.x;
-          const dz = last.z - prev.z;
-
-          const predictedX = last.x + dx * 10;
-          const predictedZ = last.z + dz * 10;
-
-          console.log("Прогноз точки падіння:", predictedX, predictedZ);
-        }
-
-        requestAnimationFrame(updateTrajectory);
-      }
-
-      updateTrajectory();
-    </script>
-  </body>
+</body>
 </html>
