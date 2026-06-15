@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Physics + Trajectory + ML Prediction</title>
+
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body { margin:0; overflow:hidden; font-family:Arial,sans-serif; }
+
+.ui {
+  position:fixed;
+  top:10px;
+  left:10px;
+  z-index:100;
+}
+
+button {
+  padding:10px;
+  margin-right:5px;
+}
+
+#prediction {
+  position:fixed;
+  left:10px;
+  top:60px;
+  background:white;
+  padding:10px;
+  border:1px solid #ccc;
+  z-index:100;
+}
+
+#graph {
+  position:fixed;
+  right:10px;
+  top:10px;
+  width:420px;
+  height:300px;
+  background:white;
+  z-index:100;
+}
+</style>
+</head>
+
+<body>
+
+<div class="ui">
+  <button onclick="shoot()">🎯 Постріл</button>
+</div>
+
+<div id="prediction">
+  ML прогноз: -
+</div>
+
+<canvas id="graph" width="420" height="300"></canvas>
+
+<a-scene physics="gravity: -9.81">
+  <a-plane static-body rotation="-90 0 0"
+           width="50" height="50"
+           color="#7BC8A4"></a-plane>
+
+  <a-camera position="0 1.6 5"></a-camera>
+
+  <a-sphere id="ball"
+            position="0 1 -3"
+            radius="0.3"
+            color="red"
+            dynamic-body>
+  </a-sphere>
+
+  <a-box position="0 1 -10"
+         color="blue"
+         static-body></a-box>
+</a-scene>
+
+<script>
+let force = 12;
+let angle = 20;
+let g = 9.81;
+
+let tracking = false;
+let predictedDistance = 0;
+
+let chart;
+
+window.onload = function() {
+
+  const ctx = document.getElementById("graph").getContext("2d");
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Висота кулі",
+        data: []
+      }]
+    },
+    options: {
+      responsive: false
+    }
+  });
+};
+
+function shoot() {
+
+  const ball = document.querySelector("#ball");
+
+  if (!ball.body) {
+    alert("Фізичний рушій ще завантажується");
+    return;
+  }
+
+  predictedDistance =
+      (force * force * Math.sin(2 * angle * Math.PI / 180)) / g;
+
+  document.getElementById("prediction").innerHTML =
+      "<b>ML прогноз дальності:</b> " +
+      predictedDistance.toFixed(2) + " м";
+
+  chart.data.labels = [];
+  chart.data.datasets[0].data = [];
+  chart.update();
+
+  ball.setAttribute("position", "0 1 -3");
+
+  ball.body.velocity.set(0, 4, -force);
+
+  tracking = true;
+}
+
+setInterval(() => {
+
+  if (!tracking || !chart) return;
+
+  const ball = document.querySelector("#ball");
+  const pos = ball.getAttribute("position");
+
+  chart.data.labels.push(chart.data.labels.length);
+  chart.data.datasets[0].data.push(pos.y);
+  chart.update();
+
+  if (pos.y < 0.3) {
+
+    tracking = false;
+
+    let realDistance =
+        Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+
+    let error =
+        Math.abs(predictedDistance - realDistance);
+
+    document.getElementById("prediction").innerHTML +=
+      "<br><b>Фактична дальність:</b> " +
+      realDistance.toFixed(2) + " м" +
+      "<br><b>Похибка:</b> " +
+      error.toFixed(2) + " м";
+  }
+
+}, 100);
+</script>
+
+</body>
+</html>
