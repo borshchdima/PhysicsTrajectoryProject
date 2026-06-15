@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>PhysLab VR - Vertical Motion</title>
+    <title>PhysLab VR - Vertical Fall</title>
     <script src="https://aframe.io/releases/0.9.2/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/donmccurdy/aframe-physics-system/v4.0.1/dist/aframe-physics-system.min.js"></script>
     
@@ -14,7 +14,7 @@
             padding: 15px; border-radius: 8px; font-family: sans-serif;
             z-index: 10;
         }
-        button { padding: 10px 20px; cursor: pointer; background: #ff4444; border: none; color: white; border-radius: 5px; }
+        button { padding: 10px 20px; cursor: pointer; background: #4444ff; border: none; color: white; border-radius: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         td { padding: 5px; border: 1px solid #444; }
     </style>
@@ -22,15 +22,15 @@
 <body>
 
     <div id="ui-panel">
-        <button onclick="launchBall()">Запуск вертикально</button>
+        <button onclick="resetBall()">Скинути м'яч (з 5м)</button>
         <table>
-            <tr><td>Висота:</td><td id="val-height">0</td></tr>
-            <tr><td>Швидкість:</td><td id="val-velocity">0</td></tr>
+            <tr><td>Висота:</td><td id="val-height">5.00 м</td></tr>
+            <tr><td>Швидкість:</td><td id="val-velocity">0.00 м/с</td></tr>
         </table>
     </div>
 
     <a-scene physics="debug: true">
-        <a-sphere id="ball" dynamic-body="mass: 1" position="0 0.5 0" radius="0.3" color="red"></a-sphere>
+        <a-sphere id="ball" dynamic-body="mass: 1" position="0 5 0" radius="0.3" color="red"></a-sphere>
         
         <a-entity id="trajectory" line="color: yellow; opacity: 0.8"></a-entity>
         
@@ -41,16 +41,11 @@
     <script>
         const ball = document.querySelector('#ball');
         const trajectory = document.querySelector('#trajectory');
-        let points = [];
 
-        function launchBall() {
-            // Скидання м'яча строго в центрі
-            ball.body.position.set(0, 0.5, 0);
+        function resetBall() {
+            // Повертаємо м'яч на висоту 5 метрів
+            ball.body.position.set(0, 5, 0);
             ball.body.velocity.set(0, 0, 0);
-            
-            // Вектор сили ТІЛЬКИ вгору (x=0, y=12, z=0)
-            ball.body.applyImpulse({x: 0, y: 12, z: 0}, {x: 0, y: 0, z: 0});
-            points = []; 
         }
 
         function update() {
@@ -60,15 +55,14 @@
 
                 // Оновлення таблиці
                 document.getElementById('val-height').textContent = pos.y.toFixed(2) + " м";
-                // Швидкість для вертикального руху (беремо тільки Y компоненту)
-                document.getElementById('val-velocity').textContent = vel.y.toFixed(2) + " м/с";
+                document.getElementById('val-velocity').textContent = Math.abs(vel.y).toFixed(2) + " м/с";
 
-                // Розрахунок траєкторії (вертикальна лінія)
-                if (pos.y > 0.1) {
-                    points.push(`0 ${pos.y} 0`);
-                    // Малюємо лінію від землі (0 0 0) до поточної висоти
-                    trajectory.setAttribute('line', 'start', '0 0 0');
+                // Малюємо лінію від 5 метрів до поточної висоти м'яча
+                if (pos.y < 5) {
+                    trajectory.setAttribute('line', 'start', '0 5 0');
                     trajectory.setAttribute('line', 'end', `0 ${pos.y} 0`);
+                } else {
+                    trajectory.setAttribute('line', 'end', '0 5 0');
                 }
             }
             requestAnimationFrame(update);
