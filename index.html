@@ -1,7 +1,8 @@
+<!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Ballistic Shot Project</title>
+  <meta charset="utf-8">
+  <title>Ballistics</title>
 
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
 </head>
@@ -9,84 +10,15 @@
 <body>
 
 <a-scene>
-
-  <!-- Земля -->
-  <a-box position="0 -1 0" width="30" height="1" depth="30" color="#4CAF50"></a-box>
-
-  <!-- М’ЯЧ -->
-  <a-sphere id="ball" radius="0.25" color="red" position="0 0 0"></a-sphere>
-
-  <!-- МАРКЕР ПАДІННЯ -->
-  <a-cylinder id="target" radius="0.3" height="0.1" color="yellow" position="0 0 0"></a-cylinder>
-
-  <!-- КАМЕРА -->
-  <a-camera position="0 2 6"></a-camera>
-
+  <a-sphere id="ball" position="0 0 0" radius="0.25" color="red"></a-sphere>
+  <a-box position="0 -1 0" width="20" height="1" depth="20" color="#4CAF50"></a-box>
 </a-scene>
 
 <script>
-(() => {
-
-  // =========================
-  // ФІЗИКА
-  // =========================
-  const g = 9.81;
-
-  const v0 = 12;       // сила пострілу
-  const angle = 45;    // кут (вгору)
-
-  const theta = angle * Math.PI / 180;
-
-  const vx = v0 * Math.cos(theta);
-  const vy0 = v0 * Math.sin(theta);
-
-  // =========================
-  // ОБ’ЄКТИ
-  // =========================
+  // ❗ ТІЛЬКИ JS ТУТ
   const ball = document.querySelector("#ball");
-  const target = document.querySelector("#target");
 
-  // старт
-  let t = 0;
-  const dt = 0.02;
-
-  const x0 = 0;
-  const y0 = 0;
-
-  // =========================
-  // ПРОГНОЗ ДАЛЬНОСТІ
-  // =========================
-  const range = (v0 * v0 * Math.sin(2 * theta)) / g;
-
-  target.setAttribute("position", `${range} 0 0`);
-
-  console.log("🎯 Очікувана дальність:", range.toFixed(2));
-
-  // =========================
-  // РУХ
-  // =========================
-  function animate() {
-
-    const x = x0 + vx * t;
-    const y = y0 + vy0 * t - 0.5 * g * t * t;
-
-    // оновлення позиції м’яча
-    ball.setAttribute("position", `${x} ${Math.max(y, 0)} 0`);
-
-    t += dt;
-
-    // падіння
-    if (y > 0) {
-      requestAnimationFrame(animate);
-    } else {
-      console.log("ВПАВ!");
-      console.log("Реальна дальність:", x.toFixed(2));
-    }
-  }
-
-  animate();
-
-})();
+  console.log(ball);
 </script>
 
 </body>
