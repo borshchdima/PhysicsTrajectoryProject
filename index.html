@@ -26,6 +26,47 @@
 
     </a-scene>
 
+    <script>
+
+      const ball = document.querySelector("#ball");
+
+// фізика
+const g = 9.81;
+const v0 = 12;        // сила кидка
+const angle = 45;     // кут (в градусах)
+
+// стартова позиція
+const x0 = 0;
+const y0 = 0;
+
+let t = 0;
+const dt = 0.02;
+
+const theta = angle * Math.PI / 180;
+
+// швидкість
+const vx = v0 * Math.cos(theta);
+const vy0 = v0 * Math.sin(theta);
+
+function update() {
+
+  const x = x0 + vx * t;
+  const y = y0 + vy0 * t - 0.5 * g * t * t;
+
+  ball.setAttribute("position", `${x} ${Math.max(y, 0)} 0`);
+
+  t += dt;
+
+  if (y > 0) {
+    requestAnimationFrame(update);
+  } else {
+    console.log("Впав! дальність:", x.toFixed(2));
+  }
+}
+
+update();
+</script>
+    
     <!-- ГРАФІК -->
     <canvas id="chart" style="position:fixed; top:10px; right:10px; width:300px; height:200px;"></canvas>
 
