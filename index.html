@@ -2,58 +2,90 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>A-Frame Physics Fixed</title>
+    <title>Trajectory + Prediction</title>
 
-    <head>
-    <link rel="icon" href="data:,">
-    
-    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-
-    <!-- Physics system (сучасна версія) -->
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@4.0.2/dist/aframe-physics-system.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
 
   <body>
-    <a-scene physics="driver: ammo; debug: true">
+    <a-scene physics="driver: ammo; debug: false">
 
       <!-- ПІДЛОГА -->
-      <a-box
-        position="0 -1 0"
-        width="20"
-        height="1"
-        depth="20"
-        color="#4CAF50"
-        static-body
-      ></a-box>
+      <a-box position="0 -1 0" width="20" height="1" depth="20" color="#4CAF50" static-body></a-box>
 
-      <!-- ПАДАЮЧИЙ КУБ -->
-      <a-box
-        position="0 5 -3"
-        width="1"
-        height="1"
-        depth="1"
-        color="red"
-        dynamic-body
-      ></a-box>
-
-      <!-- СФЕРА -->
-      <a-sphere
-        position="2 8 -3"
-        radius="0.5"
-        color="blue"
-        dynamic-body
-      ></a-sphere>
-
-      <!-- СВІТЛО -->
-      <a-light type="ambient" intensity="0.6"></a-light>
-      <a-light type="directional" position="2 5 3"></a-light>
+      <!-- ОБ’ЄКТ -->
+      <a-sphere id="ball" position="0 5 -3" radius="0.5" color="red" dynamic-body></a-sphere>
 
       <!-- КАМЕРА -->
       <a-entity position="0 1.6 5">
-        <a-camera wasd-controls look-controls></a-camera>
+        <a-camera></a-camera>
       </a-entity>
 
     </a-scene>
+
+    <!-- ГРАФІК -->
+    <canvas id="chart" style="position:fixed; top:10px; right:10px; width:300px; height:200px;"></canvas>
+
+    <script>
+      const ball = document.querySelector("#ball");
+
+      let positions = [];
+      let chart;
+      let startY = 5;
+
+      // ініціалізація графіка
+      const ctx = document.getElementById("chart");
+
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [{
+            label: "Trajectory (X-Z)",
+            data: [],
+            borderColor: "red",
+            fill: false
+          }]
+        },
+        options: {
+          responsive: false
+        }
+      });
+
+      // оновлення траєкторії
+      function updateTrajectory() {
+        const pos = ball.object3D.position;
+
+        positions.push({ x: pos.x, z: pos.z });
+
+        // додаємо точку (беремо X як вісь)
+        chart.data.labels.push(positions.length);
+        chart.data.datasets[0].data.push(pos.x);
+
+        chart.update();
+
+        // прогноз падіння
+        if (positions.length > 10) {
+          const last = positions[positions.length - 1];
+
+          // простий прогноз: продовження руху
+          const prev = positions[positions.length - 2];
+          const dx = last.x - prev.x;
+          const dz = last.z - prev.z;
+
+          const predictedX = last.x + dx * 10;
+          const predictedZ = last.z + dz * 10;
+
+          console.log("Прогноз точки падіння:", predictedX, predictedZ);
+        }
+
+        requestAnimationFrame(updateTrajectory);
+      }
+
+      updateTrajectory();
+    </script>
   </body>
 </html>
